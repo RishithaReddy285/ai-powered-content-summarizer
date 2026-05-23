@@ -1,0 +1,12 @@
+{
+  "name": "ai-powered-content-summarizer",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "cd frontend && npm install && npm run build"
+  },
+  "dependencies": {
+    "groq-sdk": "^latest",
+    "chromadb": "^latest"
+  }
+}
