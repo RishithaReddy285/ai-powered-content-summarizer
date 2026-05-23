@@ -31,7 +31,7 @@ function App() {
       setAnalysis(data.analysis);
     } catch (err) {
       console.error(err);
-      setError(\`Error: \${err.message}\`);
+      setError(`Error: ${err.message}`);
     } finally {
       setLoading(false);
     }
