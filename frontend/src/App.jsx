@@ -23,14 +23,15 @@ function App() {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to analyze code');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to summarize content');
       }
 
       const data = await response.json();
       setAnalysis(data.analysis);
     } catch (err) {
       console.error(err);
-      setError('An error occurred while summarizing the content. Is the backend running?');
+      setError(\`Error: \${err.message}\`);
     } finally {
       setLoading(false);
     }

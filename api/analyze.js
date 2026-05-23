@@ -79,6 +79,6 @@ ${code}
 
   } catch (error) {
     console.error('Error summarizing content:', error);
-    res.status(500).json({ error: 'Failed to summarize content' });
+    res.status(500).json({ error: error.message || 'Failed to summarize content' });
   }
 };
