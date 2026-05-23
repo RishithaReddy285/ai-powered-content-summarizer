@@ -6,7 +6,7 @@
     "build": "cd frontend && npm install && npm run build"
   },
   "dependencies": {
-    "groq-sdk": "^latest",
-    "chromadb": "^latest"
+    "groq-sdk": "*",
+    "chromadb": "*"
   }
 }
