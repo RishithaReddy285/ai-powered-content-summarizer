@@ -14,7 +14,7 @@ function App() {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch('http://localhost:5000/api/analyze', {
+      const response = await fetch('/api/analyze', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

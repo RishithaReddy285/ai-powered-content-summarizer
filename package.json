@@ -1,0 +1,25 @@
+{
+  "name": "ai-powered-content-summarizer",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/RishithaReddy285/ai-powered-content-summarizer.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/RishithaReddy285/ai-powered-content-summarizer/issues"
+  },
+  "homepage": "https://github.com/RishithaReddy285/ai-powered-content-summarizer#readme",
+  "dependencies": {
+    "chromadb": "^3.4.3",
+    "groq-sdk": "^1.2.0"
+  }
+}
