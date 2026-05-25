@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
 const Groq = require('groq-sdk');
+const { traceable } = require('langsmith');
 const { ChromaClient } = require('chromadb');
 
 const app = express();
@@ -11,14 +12,15 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 const port = process.env.PORT || 5000;
 
-// Initialize Groq SDK
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+// Local server ready
 
-// Initialize ChromaDB Client (assuming it's running locally on port 8000 if available)
-const chroma = new ChromaClient({ path: "http://localhost:8000" });
-
-app.post('/api/analyze', async (req, res) => {
+app.post('/api/summarize', async (req, res) => {
   try {
+    if (!process.env.GROQ_API_KEY) {
+      return res.status(500).json({ error: 'GROQ_API_KEY environment variable is not set.' });
+    }
+
+    const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
     const { code } = req.body;
     
     if (!code) {
@@ -42,38 +44,31 @@ ${safeText}
 \`\`\`
 `;
 
-    const chatCompletion = await groq.chat.completions.create({
-      messages: [
-        {
-          role: "system",
-          content: "You are an expert AI content summarizer. You provide precise, insightful, and concise summaries."
-        },
-        {
-          role: "user",
-          content: prompt
-        }
-      ],
-      model: "llama-3.1-8b-instant", // Using Llama 3.1 8B for fast inference
-      temperature: 0.2,
-      max_tokens: 1024,
-    });
+    // Wrap the LLM call using LangSmith traceable helper
+    const getCompletion = traceable(
+      async (messages) => {
+        return await groq.chat.completions.create({
+          messages,
+          model: "llama-3.1-8b-instant",
+          temperature: 0.2,
+          max_tokens: 1024,
+        });
+      },
+      { name: "Groq Summarizer Chat", run_type: "llm" }
+    );
+
+    const chatCompletion = await getCompletion([
+      {
+        role: "system",
+        content: "You are an expert AI content summarizer. You provide precise, insightful, and concise summaries."
+      },
+      {
+        role: "user",
+        content: prompt
+      }
+    ]);
 
     const analysis = chatCompletion.choices[0]?.message?.content || 'No analysis generated.';
-
-    // Try to save to ChromaDB (non-blocking if it fails)
-    try {
-      const collection = await chroma.getOrCreateCollection({
-        name: "code_analysis_history"
-      });
-      await collection.add({
-        documents: [code],
-        metadatas: [{ analysis }],
-        ids: [Date.now().toString()]
-      });
-      console.log("Successfully saved to ChromaDB.");
-    } catch (dbError) {
-      console.warn("ChromaDB is not available. Skipping DB save. Error:", dbError.message);
-    }
 
     res.json({ analysis });
 
