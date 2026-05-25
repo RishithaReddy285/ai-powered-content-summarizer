@@ -1,11 +1,4 @@
 const Groq = require('groq-sdk');
-const { ChromaClient } = require('chromadb');
-
-// Initialize Groq SDK
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
-
-// Initialize ChromaDB Client
-const chroma = new ChromaClient({ path: "http://localhost:8000" });
 
 module.exports = exports = async (req, res) => {
   // Add CORS headers for local development testing
@@ -24,11 +17,19 @@ module.exports = exports = async (req, res) => {
   }
 
   try {
+    if (!process.env.GROQ_API_KEY) {
+      return res.status(500).json({ error: 'GROQ_API_KEY environment variable is not set.' });
+    }
+
+    const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
     const { code } = req.body;
     
     if (!code) {
       return res.status(400).json({ error: 'Content is required' });
     }
+
+    // Truncate to prevent Groq TPM rate limits on free tier
+    const safeText = code.length > 25000 ? code.substring(0, 25000) + "\n...[Content Truncated due to API Limits]..." : code;
 
     const prompt = `
 Please read the following text or article and provide a clear, concise summary. 
@@ -39,7 +40,7 @@ Format the output cleanly in Markdown.
 
 Input:
 \`\`\`
-${code}
+${safeText}
 \`\`\`
 `;
 
@@ -60,20 +61,6 @@ ${code}
     });
 
     const analysis = chatCompletion.choices[0]?.message?.content || 'No summary generated.';
-
-    // Try to save to ChromaDB (non-blocking if it fails)
-    try {
-      const collection = await chroma.getOrCreateCollection({
-        name: "content_summary_history"
-      });
-      await collection.add({
-        documents: [code],
-        metadatas: [{ analysis }],
-        ids: [Date.now().toString()]
-      });
-    } catch (dbError) {
-      console.warn("ChromaDB is not available. Skipping DB save. Error:", dbError.message);
-    }
 
     res.status(200).json({ analysis });
 
